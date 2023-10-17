@@ -1,23 +1,23 @@
-const User = require("../models/userModel")
 const jwt = require("jsonwebtoken")
 const asyncHandler = require("express-async-handler")
+const User = require("../models/User")
 
 exports.requireSignIn = asyncHandler(async (req, res, next) => {
-	//console.log(req.headers)
+	// console.log(req.headers)
 	const authHeader = req.headers.authorization || req.headers.Authorization
 
 	if (!authHeader?.startsWith("Bearer ")) {
-		throw new Error("Unauthorized")
+		return res.status(401).json({ message: "Unauthorized" })
 	}
 
 	try {
 		const token = authHeader.split(" ")[1]
 
-		jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+		jwt.verify(token, process.env.JWT_TOKEN_SECRET, async (err, decoded) => {
 			if (err) {
 				return res.json({ message: "Invalid token" })
 			}
-			const userId = decoded.userId
+			const userId = decoded?.user_idd
 			const user = await User.findById(userId).select("-password")
 			req.user = user
 			//   console.log({ user })

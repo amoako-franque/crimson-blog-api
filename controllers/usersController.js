@@ -1,35 +1,36 @@
 const User = require("../models/User")
 const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
 const asyncHandler = require("express-async-handler")
 const { createToken } = require("../utils/generateToken")
 
 exports.register = asyncHandler(async (req, res) => {
-	const { username, email, password } = req.body
+	const { firstname, lastname, email, password } = req.body
 
-	if (!username || !email) {
-		return res.status(400).json({ msg: "please fill all fields" })
-	}
-
-	const userExists = await User.findOne({ email })
-
-	if (userExists) {
-		return res.status(400).json({ msg: "User already exists. Please login" })
+	if (!firstname || !email || !lastname) {
+		return res.status(400).json({ message: "please fill all fields" })
 	}
 
 	if (password && password.length < 6) {
 		return res
 			.status(400)
-			.json({ msg: "Password must be at least 6 characters" })
+			.json({ message: "Password must be at least 6 characters" })
 	}
 
-	const slug = slugify(username)
+	const userExists = await User.findOne({ email })
+
+	if (userExists) {
+		return res
+			.status(400)
+			.json({ message: "User already exists. Please login" })
+	}
 
 	const salt = await bcrypt.genSalt(10)
 	const hashedPassword = await bcrypt.hash(password, salt)
 
 	const user = await User.create({
-		username: slug,
+		firstname,
+		lastname,
+
 		email,
 		password: hashedPassword,
 	})
@@ -38,23 +39,29 @@ exports.register = asyncHandler(async (req, res) => {
 		user.password = undefined
 		user.secret = undefined
 
-		res.status(201).json({ msg: "registration completed", data: user })
+		return res.status(201).json({
+			message: "Registration completed. Please login to continue",
+			data: user,
+		})
 	} else {
 		return res
 			.status(500)
-			.json({ msg: "Registration failed. Please try again later" })
+			.json({ error: "Registration failed. Please try again later" })
 	}
 })
 
 exports.login = asyncHandler(async (req, res) => {
 	const { email, password } = req.body
+
+	// password: "234219u31209u3109u230"
+	// password: "!%98uh891y312312323eh9823y981h2i3h19280h31un938h2389h289he9812he"
+
 	const user = await User.findOne({ email })
 
 	const match = await bcrypt.compare(password, user.password) // false or true
 
 	if (match) {
 		user.password = undefined
-		user.secret = undefined
 
 		const userToken = createToken(user._id, user.email)
 
@@ -64,9 +71,7 @@ exports.login = asyncHandler(async (req, res) => {
 			secure: true,
 		})
 
-		res
-			.status(200)
-			.json({ msg: `Welcome back ${user.username}`, reqs: req.headers })
+		res.status(200).json({ message: `Welcome back ${user.firstname}` })
 	} else {
 		res.status(400).json({ msg: "Invalid credentials" })
 	}
@@ -81,4 +86,11 @@ exports.logout = asyncHandler(async (req, res) => {
 	} catch (error) {
 		throw new Error("Something went wrong")
 	}
+})
+
+exports.getUsers = asyncHandler(async (req, res) => {
+	console.log(req.header)
+	console.log(req.headers)
+	const users = await User.find({}).select("-password").lean()
+	res.status(200).json({ users })
 })

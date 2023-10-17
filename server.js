@@ -18,7 +18,7 @@ mongoose.set("strictQuery", true)
 connectDB()
 
 app.use(logger)
-app.use(loginLimiter)
+// app.use(loginLimiter)
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
@@ -29,11 +29,11 @@ app.get("/", (req, res, next) => {
 	res.sendFile(path.join(__dirname, "views", "index.html"))
 })
 
-app.use("/auth", require("./routes/userRoutes"))
+// app.use("/auth", require("./routes/userRoutes"))
 
-// fs.readdirSync("./routes").map((route) => {
-// 	app.use("/", require("./routes/" + route))
-// })
+fs.readdirSync("./routes").map((route) => {
+	app.use("/", require("./routes/" + route))
+})
 
 app.all("*", (req, res) => {
 	res.status(404)
