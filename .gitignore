@@ -1,0 +1,61 @@
+
+
+### dotenv ###
+.env
+
+### Git ###
+# Created by git for backups. To disable backups in Git:
+# $ git config --global mergetool.keepBackup false
+*.orig
+
+# Created by git when using merge tools for conflicts
+*.BACKUP.*
+*.BASE.*
+*.LOCAL.*
+*.REMOTE.*
+*_BACKUP_*.txt
+*_BASE_*.txt
+*_LOCAL_*.txt
+*_REMOTE_*.txt
+
+### Node ###
+# Logs
+logs/
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+
+# Dependency directories
+node_modules/
+/node_modules/
+
+
+
+# Optional npm cache directory
+.npm
+
+
+
+# dotenv environment variable files
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+#
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+
+### react ###
+.DS_*
+**/*.backup.*
+**/*.back.*
+
+node_modules
