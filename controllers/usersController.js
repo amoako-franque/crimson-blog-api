@@ -30,14 +30,12 @@ exports.register = asyncHandler(async (req, res) => {
 	const user = await User.create({
 		firstname,
 		lastname,
-
 		email,
 		password: hashedPassword,
 	})
 
 	if (user) {
 		user.password = undefined
-		user.secret = undefined
 
 		return res.status(201).json({
 			message: "Registration completed. Please login to continue",
@@ -53,10 +51,15 @@ exports.register = asyncHandler(async (req, res) => {
 exports.login = asyncHandler(async (req, res) => {
 	const { email, password } = req.body
 
-	// password: "234219u31209u3109u230"
-	// password: "!%98uh891y312312323eh9823y981h2i3h19280h31un938h2389h289he9812he"
+	if (!email || email == "" || !password || password == "") {
+		return res.status(400).json({ message: "Please fill all fields" })
+	}
 
 	const user = await User.findOne({ email })
+
+	if (!user) {
+		return res.status(400).json({ message: "Invalid user credentials" })
+	}
 
 	const match = await bcrypt.compare(password, user.password) // false or true
 
@@ -68,7 +71,7 @@ exports.login = asyncHandler(async (req, res) => {
 		res.cookie("token", userToken, {
 			httpOnly: true,
 			maxAge: 2 * 24 * 60 * 60 * 1000,
-			secure: true,
+			// secure: true,
 		})
 
 		res.status(200).json({ message: `Welcome back ${user.firstname}` })
@@ -79,8 +82,8 @@ exports.login = asyncHandler(async (req, res) => {
 
 exports.logout = asyncHandler(async (req, res) => {
 	try {
-		const cookies = req.cookies
-		if (!cookies?.jwt) return res.sendStatus(204) //No content
+		const cookies = req?.cookies
+		if (!cookies?.token) return res.sendStatus(204) //No content
 		res.clearCookie("token", { httpOnly: true, sameSite: "None", secure: true })
 		res.status(200).json({ msg: "Logout successfully" })
 	} catch (error) {
@@ -89,8 +92,12 @@ exports.logout = asyncHandler(async (req, res) => {
 })
 
 exports.getUsers = asyncHandler(async (req, res) => {
-	console.log(req.header)
-	console.log(req.headers)
 	const users = await User.find({}).select("-password").lean()
-	res.status(200).json({ users })
+	res.status(200).json({ data: users })
 })
+
+// exports.profileVisitors = asyncHandler(async (req, res) => {
+// 	try {
+// 		const user = await User.findById(req.params.id)
+// 	} catch (error) {}
+// })

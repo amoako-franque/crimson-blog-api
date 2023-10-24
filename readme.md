@@ -3,8 +3,20 @@
 PORT=5500
 NODE_ENV="Development Environment"
 DB_URL=
-REFRESH_TOKEN_SECRET=
-ACCESS_TOKEN_SECRET=
 JWT_TOKEN_SECRET=
+"
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_SECRET_KEY=
+"
+
+USER_SECRET=
+NODEMAILER_HOST= "smtp.gmail.com"
+USER_MAIL_ID= "google gmail here"
+
+<!-- file upload -->
 
 npm install
+multer
+sharp
+cloudinary

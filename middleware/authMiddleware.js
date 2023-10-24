@@ -17,7 +17,7 @@ exports.requireSignIn = asyncHandler(async (req, res, next) => {
 			if (err) {
 				return res.json({ message: "Invalid token" })
 			}
-			const userId = decoded?.user_idd
+			const userId = decoded?.user_id
 			const user = await User.findById(userId).select("-password")
 			req.user = user
 			//   console.log({ user })
