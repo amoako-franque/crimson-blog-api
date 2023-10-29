@@ -46,12 +46,8 @@ exports.updateCategory = asyncHandler(async (req, res) => {
 	const { id } = req.params
 
 	try {
-		const category = await Category.findByIdAndUpdate(
-			id,
-			{ title },
-			{ new: true, runValidators: true }
-		)
-		res.json({ category })
+		const cat = await Category.findByIdAndUpdate(id, req.body, { new: true })
+		res.json({ data: cat })
 	} catch (error) {
 		res.json(error)
 	}

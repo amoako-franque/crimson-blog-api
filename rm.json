@@ -1,4 +1,4 @@
-{
+ data ={{
 	"firstname": "crimson",
 	"lastname": "slightly",
 	"password": "123456789",
@@ -10,4 +10,4 @@
     "lastname": "slightly",
     "password": "123456789",
     "email":"crim@slightly.com"
-}
+}}

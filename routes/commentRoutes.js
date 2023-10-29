@@ -8,8 +8,8 @@ const {
 	deleteComment,
 } = require("../controllers/commentController")
 
-router.post("/comment", requireSignIn, comment)
-router.delete("/comment/:id", requireSignIn, deleteComment)
-router.put("/comment/:id", requireSignIn, updateComment)
+router.post("/comments/:id", requireSignIn, comment)
+router.delete("/comments/:postId/:commentId", requireSignIn, deleteComment)
+router.put("/comments/:id", requireSignIn, updateComment)
 
 module.exports = router
