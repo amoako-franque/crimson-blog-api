@@ -113,5 +113,28 @@ postSchema.pre(/^find/, function (next) {
 	next()
 })
 
+// postSchema.pre("save", async function () {
+// 	try {
+// 		// this
+// 		//  find the current user and update user posts array
+// 		const user = await mongoose
+// 			.model("User")
+// 			.findByIdAndUpdate(this.user, { $push: { posts: this._id } }, )
+// 	} catch (error) {
+// 		console.log(error)
+// 	}
+// })
+
 const Post = mongoose.model("Post", postSchema)
 module.exports = Post
+
+//     const post = this
+//     if(!post.photo){
+//         return
+//     }
+//     const result = await cloudinary.uploader.upload(post.photo, {
+//         folder: "images",
+//     })
+//     post.photo = result.secure_url
+//     post.cloudinary_id = result.public_id
+// }

@@ -12,7 +12,6 @@ exports.createCategory = asyncHandler(async (req, res) => {
 		}
 
 		const category = await Category.create({
-			user: req.user._id,
 			title: req.body.title,
 		})
 
@@ -35,7 +34,7 @@ exports.fetchCategory = asyncHandler(async (req, res) => {
 
 exports.fetchCategories = asyncHandler(async (req, res) => {
 	try {
-		const categories = await Category.find({}).populate("user")
+		const categories = await Category.find({}).sort({ createdAt: "-1" })
 		res.status(201).json({ categories })
 	} catch (error) {
 		res.status(400).json(error)

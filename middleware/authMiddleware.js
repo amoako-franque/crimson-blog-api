@@ -37,7 +37,7 @@ exports.requireSignIn = asyncHandler(async (req, res, next) => {
 exports.isAdmin = asyncHandler(async (req, res, next) => {
 	const user = req.user
 
-	if (user.role !== "Admin") {
+	if (user.role !== "admin" && !user.isAdmin) {
 		const error = new Error("You are not an admin. Contact your administrator")
 		error.status = 400
 		throw error
