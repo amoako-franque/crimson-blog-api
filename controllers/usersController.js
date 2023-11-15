@@ -1,7 +1,10 @@
 const User = require("../models/User")
 const bcrypt = require("bcrypt")
 const asyncHandler = require("express-async-handler")
-const { createToken } = require("../utils/generateToken")
+const { createToken, generateOTC } = require("../utils/generateToken")
+const cloudinary = require("../utils/cloudinary")
+const sendEmail = require("./emailController")
+const { isDataView } = require("util/types")
 
 exports.register = asyncHandler(async (req, res) => {
 	const { firstname, lastname, email, password } = req.body
@@ -10,7 +13,7 @@ exports.register = asyncHandler(async (req, res) => {
 		return res.status(400).json({ message: "please fill all fields" })
 	}
 
-	if (password && password.length < 6) {
+	if (password && password?.length < 6) {
 		return res
 			.status(400)
 			.json({ message: "Password must be at least 6 characters" })
@@ -27,16 +30,46 @@ exports.register = asyncHandler(async (req, res) => {
 	const salt = await bcrypt.genSalt(10)
 	const hashedPassword = await bcrypt.hash(password, salt)
 
+	if (!req.file) {
+		const user = await User.create({
+			firstname,
+			lastname,
+			email,
+			password: hashedPassword,
+		})
+
+		if (user) {
+			user.password = undefined
+
+			return res.status(201).json({
+				message: "Registration completed. Please login to continue",
+				data: user,
+			})
+		} else {
+			return res
+				.status(500)
+				.json({ error: "Registration failed. Please try again later" })
+		}
+	}
+
+	//req.file
+
+	const result = await cloudinary.uploader.upload(req?.file?.path, {
+		folder: "crimson-users-avatars",
+	})
+
 	const user = await User.create({
 		firstname,
 		lastname,
 		email,
 		password: hashedPassword,
+		profilePic: {
+			img_url: result?.secure_url,
+			public_id: result?.public_id,
+		},
 	})
 
 	if (user) {
-		user.password = undefined
-
 		return res.status(201).json({
 			message: "Registration completed. Please login to continue",
 			data: user,
@@ -55,7 +88,7 @@ exports.login = asyncHandler(async (req, res) => {
 		return res.status(400).json({ message: "Please fill all fields" })
 	}
 
-	const user = await User.findOne({ email })
+	const user = await User.findOne({ email }).select("+password")
 
 	if (!user) {
 		return res.status(400).json({ message: "Invalid user credentials" })
@@ -76,7 +109,7 @@ exports.login = asyncHandler(async (req, res) => {
 
 		res.status(200).json({ message: `Welcome back ${user.firstname}` })
 	} else {
-		res.status(400).json({ msg: "Invalid credentials" })
+		res.status(400).json({ message: "Invalid user credentials" })
 	}
 })
 
@@ -92,7 +125,7 @@ exports.logout = asyncHandler(async (req, res) => {
 })
 
 exports.getUsers = asyncHandler(async (req, res) => {
-	const users = await User.find({}).select("-password").lean()
+	const users = await User.find({}).exec()
 	res.status(200).json({ data: users })
 })
 
@@ -328,10 +361,107 @@ exports.unblock_users_by_admin = asyncHandler(async (req, res) => {
 	}
 })
 
+exports.forgotten_password_link = asyncHandler(async (req, res) => {
+	if (!req.body.email) {
+		res.status(404).json({
+			message:
+				"Email was not provided. Please provide an email linked to your account",
+		})
+		return false
+	}
+	const user = await User.findOne({ email: req.body.email })
+
+	if (!user) {
+		res.status(400).json({
+			message: "User not found.",
+		})
+		return false
+	}
+
+	try {
+		const otc = generateOTC()
+
+		user.password_reset_token = otc
+		user.password_reset_token_expiry = Date.now() + 10 * 60 * 1000
+		const date = new Date()
+		const token_gen_time = `Token Generated at:- ${date.getHours()}
+                                                    :${date.getMinutes()}
+                                                    :${date.getSeconds()}`
+
+		await user.save()
+
+		const data = {
+			to: req.body.email,
+			text: `Hello, ${user.firstname}`,
+			subject: "Forgotten Password Link",
+			html: `<p>
+					<code>${otc}</code>
+				</p>
+                    `,
+		}
+
+		sendEmail(data)
+
+		res.status(202).json({
+			message: `A verified email has been sent to ${req.body.email}. Please follow the link to reset your password`,
+		})
+	} catch (error) {
+		res.status(500).json({ error })
+	}
+})
+
+exports.reset_password = asyncHandler(async (req, res) => {
+	const { otc, password } = req.body
+
+	if (!otc || !password) {
+		res
+			.status(400)
+			.json({ error: "Please request for a token to reset your password" })
+	}
+
+	const user = await User.findOne({
+		password_reset_token: otc,
+		password_reset_token_expiry: { $gt: Date.now() },
+	}).select("+password")
+
+	if (!user) {
+		res
+			.status(400)
+			.json({ message: "Invalid password reset token. Try again later" })
+		return false
+	}
+
+	try {
+		const salt = await bcrypt.genSalt(10)
+		const hash_pass = await bcrypt.hash(password, salt)
+		user.password = hash_pass
+		user.password_reset_token = undefined
+		user.password_reset_token_expiry = undefined
+
+		await user.save()
+
+		const data = {
+			to: user.email,
+			text: `Hello, ${user.firstname}`,
+			subject: "Password reset successful",
+			html: `<p>
+					<h2>Please login with your new credentials</h2>
+				</p>
+                    `,
+		}
+
+		sendEmail(data)
+
+		res.status(202).json({
+			message: "Password reset completed",
+		})
+	} catch (error) {
+		res.status(500).json({ error })
+	}
+})
+
 exports.user_profile = asyncHandler(async (req, res) => {})
 exports.update_user_profile = asyncHandler(async (req, res) => {})
 exports.update_user_password = asyncHandler(async (req, res) => {})
 exports.delete_user_account = asyncHandler(async (req, res) => {})
 exports.update_profile_pic = asyncHandler(async (req, res) => {})
-exports.forgotten_password_link = asyncHandler(async (req, res) => {})
-exports.reset_password = asyncHandler(async (req, res) => {})

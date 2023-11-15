@@ -6,23 +6,33 @@ const userSchema = new mongoose.Schema(
 		lastname: {
 			type: String,
 			required: true,
+			trim: true,
 		},
 		firstname: {
 			type: String,
 			required: true,
+			trim: true,
 		},
 		email: {
 			type: String,
 			required: true,
 			unique: true,
+			trim: true,
 		},
 		profilePic: {
-			type: String,
+			img_url: {
+				type: String,
+			},
+			public_id: {
+				type: String,
+			},
 		},
 		password: {
 			type: String,
 			required: true,
+			minLength: [6, "Password must be at least 6 characters"],
 			select: false,
+			trim: true,
 		},
 		isBlocked: {
 			type: Boolean,
@@ -106,25 +116,25 @@ userSchema.virtual("fullName").get(function () {
 	return this.firstname + " " + this.lastname
 })
 
-userSchema.virtual("postCount").get(function () {
-	return this.post.length
-})
+// userSchema.virtual("postCount").get(function () {
+// 	return this.post.length
+// })
 
-userSchema.virtual("followersCount").get(function () {
-	return this.followers.length
-})
+// userSchema.virtual("followersCount").get(function () {
+// 	return this.followers.length
+// })
 
-userSchema.virtual("followingCount").get(function () {
-	return this.following.length
-})
+// userSchema.virtual("followingCount").get(function () {
+// 	return this.following.length
+// })
 
-userSchema.virtual("viewersCount").get(function () {
-	return this.viewers.length
-})
+// userSchema.virtual("viewersCount").get(function () {
+// 	return this.viewers.length
+// })
 
-userSchema.virtual("blockedCount").get(function () {
-	return this.blocked.length
-})
+// userSchema.virtual("blockedCount").get(function () {
+// 	return this.blocked.length
+// })
 
 const User = mongoose.model("User", userSchema)
 

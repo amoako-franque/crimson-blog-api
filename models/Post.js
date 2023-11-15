@@ -48,12 +48,12 @@ const postSchema = new mongoose.Schema(
 			required: [true, "Only signed in users are allowed to post a blog"],
 		},
 		photo: {
-			type: String,
-			default:
-				"https://images.unsplash.com/photo-1697588833877-22816039f9b6?auto=format&fit=crop&q=60&w=800&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHx0b3BpYy1mZWVkfDd8Q0R3dXdYSkFiRXd8fGVufDB8fHx8fA%3D%3D",
-		},
-		cloudinary_id: {
-			type: String,
+			public_id: {
+				type: String,
+			},
+			img_url: {
+				type: String,
+			},
 		},
 	},
 	{ timestamps: true, toJSON: { virtuals: true } }

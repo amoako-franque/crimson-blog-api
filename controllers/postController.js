@@ -5,10 +5,15 @@ const asyncHandler = require("express-async-handler")
 const cloudinary = require("cloudinary").v2
 
 exports.addPost = asyncHandler(async (req, res) => {
-	// if (!req.user) return res.status(401)
+	if (!req.user) return res.status(401)
 	const { title, description, catId } = req.body
 
 	const user = req.user
+
+	if (user.isBlocked) {
+		result.status(401).json({ message: "You are not allowed to post " })
+		return false
+	}
 
 	if (
 		!title ||
@@ -40,7 +45,7 @@ exports.addPost = asyncHandler(async (req, res) => {
 	}
 
 	const result = await cloudinary.uploader.upload(req?.file?.path, {
-		folder: "images",
+		folder: "crimson-posts-images",
 	})
 
 	try {
@@ -49,8 +54,10 @@ exports.addPost = asyncHandler(async (req, res) => {
 			description,
 			category: catId,
 			user: user._id,
-			photo: result.secure_url,
-			cloudinary_id: result.public_id,
+			photo: {
+				img_url: result?.secure_url,
+				public_id: result?.public_id,
+			},
 		})
 		user.posts.push(post._id)
 
@@ -63,19 +70,34 @@ exports.addPost = asyncHandler(async (req, res) => {
 })
 // filter, paginate, sort
 exports.fetchPosts = asyncHandler(async (req, res) => {
-	// const posts = await Post.find()
-	// 	.populate("user", "firstname lastname")
-	// 	.populate("category", "title")
+	const user = req.user
 
-	const posts = await Post.find()
-		.populate("comments", "content")
-		.sort({ createdAt: "-1" })
-	const post_total = posts.length
-	res.json({ data: { posts, post_total } })
+	console.log(user)
+	try {
+		const posts = await Post.find()
+			.populate("comments", "content")
+			.populate("category", "title")
+			.sort({ createdAt: "-1" })
+		const post_total = posts.length
+
+		res.json({ posts })
+		return
+
+		const filter_posts = posts.filter((post) => {
+			const blocked_users = post.user.blocked
+			const isBlocked = blocked_users.includes(user._id)
+
+			return !isBlocked
+		})
+
+		res.json({ data: { filter_posts, post_total } })
+	} catch (error) {
+		throw new Error("Error for server")
+	}
 })
 
 exports.fetch_user_posts = asyncHandler(async (req, res) => {
-	// get user who is currently logged in deatils
+	// get user who is currently logged in details
 	const user = req.user
 
 	// query post data for posts made by this user only
@@ -167,20 +189,26 @@ exports.delete_post = asyncHandler(async (req, res) => {
 
 	try {
 		const post = await Post.findById(postId)
-		// console.log(post)
 
 		if (!post) {
 			return res.json({ message: "No post found" })
 		}
-
-		// res.json({ userId, postuserId: post.user })
-		// return
 
 		if (post.user.toString() !== userId.toString()) {
 			return res
 				.status(400)
 				.json({ errorMessage: "You are not authorized to delete this post " })
 		}
+
+		const { public_id } = post.photo
+
+		await cloudinary.uploader.destroy(public_id)
+
+		await User.findByIdAndUpdate(
+			userId,
+			{ $pull: { posts: postId } },
+			{ new: true }
+		)
 		await Post.findByIdAndDelete({ _id: postId })
 
 		res.status(200).json({ message: "Post has been deleted successfully" })

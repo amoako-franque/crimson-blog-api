@@ -13,12 +13,10 @@ const {
 	delete_post,
 	update_post,
 } = require("../controllers/postController")
-// const storage = require("../utils/cloudinary")
-
-const uploads = require("../utils/multer")
+const uploads = require("../middleware/uploadImage")
 
 router.post("/add-post", requireSignIn, uploads.single("image"), addPost)
-router.get("/posts", fetchPosts)
+router.get("/posts", requireSignIn, fetchPosts)
 router.get("/user/posts", requireSignIn, fetch_user_posts)
 router.get("/posts/:id", requireSignIn, fetchPost)
 router.post("/posts/likes/:id", requireSignIn, toggle_like)

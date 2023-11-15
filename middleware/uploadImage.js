@@ -1,5 +1,6 @@
 const multer = require("multer")
 const path = require("path")
+const sharp = require("sharp")
 
 // Multer config
 const uploads = multer({
