@@ -127,14 +127,3 @@ postSchema.pre(/^find/, function (next) {
 
 const Post = mongoose.model("Post", postSchema)
 module.exports = Post
-
-//     const post = this
-//     if(!post.photo){
-//         return
-//     }
-//     const result = await cloudinary.uploader.upload(post.photo, {
-//         folder: "images",
-//     })
-//     post.photo = result.secure_url
-//     post.cloudinary_id = result.public_id
-// }
